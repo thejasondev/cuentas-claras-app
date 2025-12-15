@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   title: "Cuentas Claras - Divide la cuenta facilmente",
   description:
     "Aplicacion para dividir la cuenta del restaurante entre comensales. Calcula automaticamente el total por persona incluyendo propina.",
-  generator: "v0.app",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

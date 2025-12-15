@@ -1,70 +1,88 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Users, ArrowRight, UserPlus } from "lucide-react"
-import { SwipeableItem } from "@/components/ui/swipeable-item"
-import { ProgressSteps } from "@/components/ui/progress-steps"
-import type { Diner } from "@/app/page"
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Users, ArrowRight, UserPlus } from "lucide-react";
+import { SwipeableItem } from "@/components/ui/swipeable-item";
+import { ProgressSteps } from "@/components/ui/progress-steps";
+import type { Diner } from "@/app/page";
 
 interface SetupScreenProps {
-  onComplete: (diners: Diner[]) => void
-  initialDiners: Diner[]
-  showToast: (message: string, type?: "success" | "error" | "info") => void
+  onComplete: (diners: Diner[]) => void;
+  initialDiners: Diner[];
+  showToast: (message: string, type?: "success" | "error" | "info") => void;
 }
 
-export function SetupScreen({ onComplete, initialDiners, showToast }: SetupScreenProps) {
+export function SetupScreen({
+  onComplete,
+  initialDiners,
+  showToast,
+}: SetupScreenProps) {
   const [diners, setDiners] = useState<Diner[]>(
-    initialDiners.length > 0 ? initialDiners : [{ id: crypto.randomUUID(), name: "", paid: false }],
-  )
-  const [newName, setNewName] = useState("")
-  const inputRef = useRef<HTMLInputElement>(null)
+    initialDiners.length > 0 ? initialDiners : []
+  );
+  const [newName, setNewName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const addDiner = () => {
     if (newName.trim()) {
-      setDiners([...diners, { id: crypto.randomUUID(), name: newName.trim(), paid: false }])
-      setNewName("")
-      showToast(`${newName.trim()} agregado`)
-      inputRef.current?.focus()
+      setDiners([
+        ...diners,
+        { id: crypto.randomUUID(), name: newName.trim(), paid: false },
+      ]);
+      setNewName("");
+      showToast(`${newName.trim()} agregado`);
+      // Mantener el foco
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }
+  };
 
   const removeDiner = (id: string) => {
-    const diner = diners.find((d) => d.id === id)
-    setDiners(diners.filter((d) => d.id !== id))
+    const diner = diners.find((d) => d.id === id);
+    setDiners(diners.filter((d) => d.id !== id));
     if (diner?.name) {
-      showToast(`${diner.name} eliminado`, "info")
+      showToast(`${diner.name} eliminado`, "info");
     }
-  }
+  };
 
   const updateDinerName = (id: string, name: string) => {
-    setDiners(diners.map((d) => (d.id === id ? { ...d, name } : d)))
-  }
+    setDiners(diners.map((d) => (d.id === id ? { ...d, name } : d)));
+  };
 
   const handleSubmit = () => {
-    const validDiners = diners.filter((d) => d.name.trim())
+    const validDiners = diners.filter((d) => d.name.trim());
     if (validDiners.length >= 2) {
-      onComplete(validDiners)
+      onComplete(validDiners);
     }
-  }
+  };
 
-  const validCount = diners.filter((d) => d.name.trim()).length
+  const validCount = diners.filter((d) => d.name.trim()).length;
 
   return (
     <div className="flex flex-col min-h-screen pb-40">
       <header className="bg-primary text-primary-foreground px-4 pt-6 pb-6 safe-top">
         <div className="max-w-md mx-auto pt-4">
           <h1 className="text-2xl font-bold tracking-tight">Cuentas Claras</h1>
-          <p className="text-primary-foreground/80 text-sm mt-1">Divide la cuenta facilmente</p>
+          <p className="text-primary-foreground/80 text-sm mt-1">
+            Divide la cuenta facilmente
+          </p>
         </div>
       </header>
 
       {/* Progress steps */}
       <div className="bg-card border-b shadow-sm">
         <div className="max-w-md mx-auto">
-          <ProgressSteps currentStep={0} totalSteps={3} labels={["Mesa", "Pedido", "Cuenta"]} />
+          <ProgressSteps
+            currentStep={0}
+            totalSteps={3}
+            labels={["Mesa", "Pedido", "Cuenta"]}
+          />
         </div>
       </div>
 
@@ -77,8 +95,12 @@ export function SetupScreen({ onComplete, initialDiners, showToast }: SetupScree
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-base font-semibold">Quienes estan en la mesa?</h2>
-                <p className="text-xs text-muted-foreground">Agrega los nombres de cada comensal</p>
+                <h2 className="text-base font-semibold">
+                  Quienes estan en la mesa?
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Agrega los nombres de cada comensal
+                </p>
               </div>
             </div>
 
@@ -88,13 +110,15 @@ export function SetupScreen({ onComplete, initialDiners, showToast }: SetupScree
                 <SwipeableItem
                   key={diner.id}
                   onDelete={() => removeDiner(diner.id)}
-                  className={diners.length <= 1 ? "pointer-events-none" : ""}
+                  className=""
                 >
                   <div className="flex items-center gap-2 bg-secondary/30 rounded-xl p-1">
                     <Input
                       placeholder={`Comensal ${index + 1}`}
                       value={diner.name}
-                      onChange={(e) => updateDinerName(diner.id, e.target.value)}
+                      onChange={(e) =>
+                        updateDinerName(diner.id, e.target.value)
+                      }
                       className="flex-1 h-12 text-base border-0 bg-transparent rounded-lg placeholder:text-muted-foreground/50"
                     />
                   </div>
@@ -102,7 +126,7 @@ export function SetupScreen({ onComplete, initialDiners, showToast }: SetupScree
               ))}
             </div>
 
-            {diners.length > 1 && (
+            {diners.length > 0 && (
               <p className="text-[11px] text-muted-foreground text-center mb-4 opacity-70">
                 Desliza hacia la izquierda para eliminar
               </p>
@@ -112,7 +136,11 @@ export function SetupScreen({ onComplete, initialDiners, showToast }: SetupScree
             <div className="flex items-center gap-2">
               <Input
                 ref={inputRef}
-                placeholder="Agregar comensal..."
+                placeholder={
+                  diners.length === 0
+                    ? "Nombre del primer comensal"
+                    : "Agregar otro comensal..."
+                }
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addDiner()}
@@ -136,7 +164,9 @@ export function SetupScreen({ onComplete, initialDiners, showToast }: SetupScree
             <UserPlus className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
               {validCount < 2
-                ? `Agrega ${2 - validCount} comensal${2 - validCount > 1 ? "es" : ""} mas`
+                ? `Agrega al menos ${2 - validCount} comensal${
+                    2 - validCount > 1 ? "es" : ""
+                  }`
                 : `${validCount} comensales listos`}
             </span>
           </div>
@@ -156,5 +186,5 @@ export function SetupScreen({ onComplete, initialDiners, showToast }: SetupScree
         </div>
       </div>
     </div>
-  )
+  );
 }
