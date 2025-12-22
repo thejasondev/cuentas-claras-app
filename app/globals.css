@@ -163,6 +163,19 @@
   .text-fade {
     mask-image: linear-gradient(to right, black 80%, transparent);
   }
+
+  /* Screen reader only - accessibility */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
 }
 
 /* Touch feedback - pure CSS */
@@ -184,6 +197,38 @@
   user-select: none;
 }
 
+/* Focus visible for accessibility */
+.focus-ring {
+  @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none;
+}
+
+/* Header gradient */
+.header-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    oklch(0.7 0.26 135) 100%
+  );
+}
+
+.dark .header-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    oklch(0.6 0.24 135) 100%
+  );
+}
+
+/* Modern card shadow */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.dark .card-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Animations */
 @keyframes pulse-gentle {
   0%,
   100% {
@@ -211,6 +256,182 @@
 
 .animate-slide-up {
   animation: slide-up 0.25s ease-out forwards;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+/* Skeleton loader */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    var(--secondary) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* Celebration effect */
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Chip selection animation */
+@keyframes chip-select {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-chip-select {
+  animation: chip-select 0.2s ease-out forwards;
+}
+
+/* Progress bar fill animation */
+@keyframes progress-fill {
+  from {
+    width: 0%;
+  }
+}
+
+.animate-progress-fill {
+  animation: progress-fill 0.8s ease-out forwards;
+}
+
+/* Avatar colors */
+.avatar-1 {
+  background-color: #ef4444;
+}
+.avatar-2 {
+  background-color: #f97316;
+}
+.avatar-3 {
+  background-color: #eab308;
+}
+.avatar-4 {
+  background-color: #22c55e;
+}
+.avatar-5 {
+  background-color: #06b6d4;
+}
+.avatar-6 {
+  background-color: #8b5cf6;
+}
+.avatar-7 {
+  background-color: #ec4899;
+}
+.avatar-8 {
+  background-color: #14b8a6;
+}
+
+/* Animation delays for staggered animations */
+.delay-0 {
+  animation-delay: 0ms;
+}
+.delay-50 {
+  animation-delay: 50ms;
+}
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-150 {
+  animation-delay: 150ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-250 {
+  animation-delay: 250ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-350 {
+  animation-delay: 350ms;
+}
+.delay-400 {
+  animation-delay: 400ms;
+}
+.delay-450 {
+  animation-delay: 450ms;
+}
+.delay-500 {
+  animation-delay: 500ms;
 }
 
 @media (max-height: 500px) and (orientation: landscape) {

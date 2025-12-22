@@ -47,7 +47,6 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$vercel$2f$
 const metadata = {
     title: "Cuentas Claras - Divide la cuenta facilmente",
     description: "Aplicacion para dividir la cuenta del restaurante entre comensales. Calcula automaticamente el total por persona incluyendo propina.",
-    generator: "v0.app",
     manifest: "/manifest.json",
     appleWebApp: {
         capable: true,
@@ -57,19 +56,35 @@ const metadata = {
     icons: {
         icon: [
             {
-                url: "/icon-light-32x32.png",
-                media: "(prefers-color-scheme: light)"
-            },
-            {
-                url: "/icon-dark-32x32.png",
-                media: "(prefers-color-scheme: dark)"
-            },
-            {
-                url: "/icon.svg",
-                type: "image/svg+xml"
+                url: "/Cuentas Claras Logo.png"
             }
         ],
-        apple: "/apple-icon.png"
+        apple: "/Cuentas Claras Logo.png"
+    },
+    openGraph: {
+        title: "Cuentas Claras - Divide la cuenta facilmente",
+        description: "Aplicación para dividir la cuenta del restaurante entre comensales, calcula el total incluyendo propina.",
+        url: "https://cuentasclaras.vercel.app/",
+        siteName: "Cuentas Claras",
+        images: [
+            {
+                url: "/Cuentas Claras Logo.png",
+                width: 512,
+                height: 512,
+                alt: "Cuentas Claras Logo"
+            }
+        ],
+        type: "website",
+        locale: "es_ES"
+    },
+    twitter: {
+        card: "summary_large_image",
+        site: "@cuentasclaras",
+        title: "Cuentas Claras - Divide la cuenta facilmente",
+        description: "Aplicación para dividir la cuenta del restaurante entre comensales, calcula el total incluyendo propina.",
+        images: [
+            "/Cuentas Claras Logo.png"
+        ]
     }
 };
 const viewport = {
@@ -98,18 +113,18 @@ function RootLayout({ children }) {
                 children,
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$vercel$2f$analytics$2f$dist$2f$next$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["Analytics"], {}, void 0, false, {
                     fileName: "[project]/app/layout.tsx",
-                    lineNumber: 60,
+                    lineNumber: 75,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/app/layout.tsx",
-            lineNumber: 58,
+            lineNumber: 73,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/app/layout.tsx",
-        lineNumber: 57,
+        lineNumber: 72,
         columnNumber: 5
     }, this);
 }
