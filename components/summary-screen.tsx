@@ -75,10 +75,19 @@ export function SummaryScreen({
       } else {
         // División por consumo
         items.forEach((item) => {
+          const itemIsShared = item.isShared ?? true; // Default a compartido para items antiguos
+
           if (item.assignedTo.includes("all")) {
+            // Todos comparten - siempre dividir
             subtotal += item.price / diners.length;
           } else if (item.assignedTo.includes(diner.id)) {
-            subtotal += item.price / item.assignedTo.length;
+            if (itemIsShared) {
+              // Compartido - dividir entre los asignados
+              subtotal += item.price / item.assignedTo.length;
+            } else {
+              // Cada uno - cada persona paga el precio completo
+              subtotal += item.price;
+            }
           }
         });
       }

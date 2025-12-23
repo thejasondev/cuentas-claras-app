@@ -23,6 +23,7 @@ export type Item = {
   name: string;
   price: number;
   assignedTo: string[];
+  isShared: boolean; // true = dividir entre comensales, false = cada uno paga el total
 };
 
 type ToastState = {
@@ -148,20 +149,31 @@ export default function Home() {
   };
 
   const handleNewBillRequest = () => {
-    // Si hay datos, pedir confirmación
-    if (diners.length > 0 || items.length > 0) {
+    // Verificar si todos han pagado (cuenta ya guardada en historial)
+    const allPaid = diners.length > 0 && diners.every((d) => d.paid);
+
+    if (allPaid) {
+      // Todos pagaron - la cuenta ya está en historial, no necesita confirmación
+      handleNewBill(true);
+    } else if (diners.length > 0 || items.length > 0) {
+      // Hay datos sin guardar - pedir confirmación
       setShowConfirmNewBill(true);
     } else {
-      handleNewBill();
+      // No hay datos - crear nueva directamente
+      handleNewBill(false);
     }
   };
 
-  const handleNewBill = () => {
+  const handleNewBill = (wasCompleted: boolean = false) => {
     setDiners([]);
     setItems([]);
     setStep("setup");
     clearCurrentBill();
-    showToast("Nueva cuenta iniciada", "info");
+    if (wasCompleted) {
+      showToast("¡Cuenta cerrada! ✓", "success");
+    } else {
+      showToast("Nueva cuenta iniciada", "info");
+    }
   };
 
   const handleNavigate = (screen: "setup" | "history" | "settings") => {

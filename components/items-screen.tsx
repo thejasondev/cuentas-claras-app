@@ -45,6 +45,7 @@ export function ItemsScreen({
   const [itemPrice, setItemPrice] = useState("");
   const [selectedDiners, setSelectedDiners] = useState<string[]>([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
+  const [isShared, setIsShared] = useState(true); // true = compartido, false = cada uno
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(items.length === 0);
   const formRef = useRef<HTMLDivElement>(null);
@@ -93,6 +94,7 @@ export function ItemsScreen({
                   name: itemName.trim(),
                   price: Number.parseFloat(itemPrice),
                   assignedTo: isAllSelected ? ["all"] : selectedDiners,
+                  isShared: selectedDiners.length >= 2 ? isShared : true,
                 }
               : item
           )
@@ -105,6 +107,7 @@ export function ItemsScreen({
           name: itemName.trim(),
           price: Number.parseFloat(itemPrice),
           assignedTo: isAllSelected ? ["all"] : selectedDiners,
+          isShared: selectedDiners.length >= 2 ? isShared : true,
         };
         setItems([...items, newItem]);
         showToast(`${itemName.trim()} agregado`);
@@ -118,6 +121,7 @@ export function ItemsScreen({
     setItemPrice("");
     setSelectedDiners([]);
     setIsAllSelected(false);
+    setIsShared(true);
     if (items.length > 0 || editingItemId) {
       setShowForm(false);
     }
@@ -139,6 +143,7 @@ export function ItemsScreen({
     setEditingItemId(item.id);
     setItemName(item.name);
     setItemPrice(item.price.toString());
+    setIsShared(item.isShared ?? true);
     if (item.assignedTo.includes("all")) {
       setIsAllSelected(true);
       setSelectedDiners(diners.map((d) => d.id));
@@ -344,22 +349,95 @@ export function ItemsScreen({
                   </div>
                 </div>
 
+                {/* Toggle Compartido / Cada uno - solo aparece con 2+ personas */}
+                {selectedDiners.length >= 2 && (
+                  <div className="animate-fade-in">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      ¿Cómo dividir este plato?
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsShared(true)}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl border-2 transition-all touch-feedback text-sm",
+                          isShared
+                            ? "bg-primary/10 border-primary text-primary font-semibold"
+                            : "border-border text-muted-foreground hover:border-primary/50"
+                        )}
+                      >
+                        <span className="text-base">🔀</span>
+                        <span>Compartido</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsShared(false)}
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl border-2 transition-all touch-feedback text-sm",
+                          !isShared
+                            ? "bg-primary/10 border-primary text-primary font-semibold"
+                            : "border-border text-muted-foreground hover:border-primary/50"
+                        )}
+                      >
+                        <span className="text-base">🍽️</span>
+                        <span>Cada uno</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Vista previa de división */}
                 {itemPrice && selectedDiners.length > 0 && (
                   <div className="bg-secondary/50 rounded-xl p-4 animate-fade-in">
-                    <p className="text-xs text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-2">
                       Vista previa:
                     </p>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        {selectedDiners.length === 1
-                          ? "1 persona"
-                          : `${selectedDiners.length} personas`}
-                      </span>
-                      <span className="font-bold text-lg text-primary">
-                        {formatCurrency(previewPricePerPerson, currency)} c/u
-                      </span>
-                    </div>
+                    {selectedDiners.length >= 2 && !isShared ? (
+                      // Cada uno paga el total
+                      <div className="space-y-1">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            {selectedDiners.length} personas ×{" "}
+                            {formatCurrency(
+                              Number.parseFloat(itemPrice),
+                              currency
+                            )}
+                          </span>
+                          <span className="font-bold text-lg text-primary">
+                            {formatCurrency(
+                              Number.parseFloat(itemPrice),
+                              currency
+                            )}{" "}
+                            c/u
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Total:{" "}
+                          {formatCurrency(
+                            Number.parseFloat(itemPrice) *
+                              selectedDiners.length,
+                            currency
+                          )}
+                        </p>
+                      </div>
+                    ) : (
+                      // Compartido - dividir entre personas
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          {selectedDiners.length === 1
+                            ? "1 persona"
+                            : `${selectedDiners.length} personas`}
+                        </span>
+                        <span className="font-bold text-lg text-primary">
+                          {formatCurrency(
+                            Number.parseFloat(itemPrice) /
+                              selectedDiners.length,
+                            currency
+                          )}{" "}
+                          c/u
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -505,11 +583,10 @@ export function ItemsScreen({
       {!showForm && items.length > 0 && (
         <button
           onClick={() => setShowForm(true)}
-          className="fixed right-4 bottom-24 z-30 flex items-center justify-center h-14 min-w-14 px-5 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 touch-feedback no-select transition-all duration-200 hover:shadow-2xl hover:scale-105 focus-ring"
+          className="fixed right-4 bottom-24 z-30 flex items-center justify-center h-14 min-w-14 px-5 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 touch-feedback no-select transition-all duration-200 hover:shadow-2xl hover:scale-105 focus-ring mb-2"
           aria-label="Agregar plato"
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} />
-          <span className="ml-2 font-semibold text-sm">Agregar</span>
         </button>
       )}
 
