@@ -93,3 +93,106 @@ export function getSettings(): AppSettings {
     return defaultSettings;
   }
 }
+
+// ============ Nombres de Comensales Frecuentes ============
+
+const FREQUENT_DINERS_KEY = "cuentas-claras-frequent-diners";
+
+interface FrequentDiner {
+  name: string;
+  count: number; // Veces que se ha usado
+  lastUsed: string; // ISO date
+}
+
+/**
+ * Guarda nombres de comensales y actualiza su frecuencia
+ */
+export function saveFrequentDiners(names: string[]): void {
+  try {
+    const existing = getFrequentDiners();
+    const now = new Date().toISOString();
+
+    names.forEach((name) => {
+      const trimmedName = name.trim();
+      if (!trimmedName) return;
+
+      const existingIndex = existing.findIndex(
+        (d) => d.name.toLowerCase() === trimmedName.toLowerCase()
+      );
+
+      if (existingIndex >= 0) {
+        // Actualizar existente
+        existing[existingIndex].count += 1;
+        existing[existingIndex].lastUsed = now;
+        // Mantener el nombre con la capitalización más reciente
+        existing[existingIndex].name = trimmedName;
+      } else {
+        // Añadir nuevo
+        existing.push({
+          name: trimmedName,
+          count: 1,
+          lastUsed: now,
+        });
+      }
+    });
+
+    // Ordenar por frecuencia y limitar a 30
+    const sorted = existing.sort((a, b) => b.count - a.count).slice(0, 30);
+
+    localStorage.setItem(FREQUENT_DINERS_KEY, JSON.stringify(sorted));
+  } catch (error) {
+    console.error("Error saving frequent diners:", error);
+  }
+}
+
+/**
+ * Obtiene todos los comensales frecuentes ordenados por uso
+ */
+export function getFrequentDiners(): FrequentDiner[] {
+  try {
+    const data = localStorage.getItem(FREQUENT_DINERS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error("Error loading frequent diners:", error);
+    return [];
+  }
+}
+
+/**
+ * Busca sugerencias de nombres que coincidan con el texto
+ */
+export function getSuggestions(
+  query: string,
+  exclude: string[] = []
+): string[] {
+  if (!query.trim()) return [];
+
+  const diners = getFrequentDiners();
+  const lowerQuery = query.toLowerCase().trim();
+  const lowerExclude = exclude.map((e) => e.toLowerCase());
+
+  return diners
+    .filter(
+      (d) =>
+        d.name.toLowerCase().includes(lowerQuery) &&
+        !lowerExclude.includes(d.name.toLowerCase())
+    )
+    .slice(0, 5) // Máximo 5 sugerencias
+    .map((d) => d.name);
+}
+
+/**
+ * Obtiene los comensales más frecuentes para mostrar como chips rápidos
+ */
+export function getTopDiners(
+  limit: number = 6,
+  exclude: string[] = []
+): string[] {
+  const diners = getFrequentDiners();
+  const lowerExclude = exclude.map((e) => e.toLowerCase());
+
+  return diners
+    .filter((d) => !lowerExclude.includes(d.name.toLowerCase()))
+    .slice(0, limit)
+    .map((d) => d.name);
+}

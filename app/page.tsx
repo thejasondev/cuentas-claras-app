@@ -10,7 +10,12 @@ import { OnboardingScreen } from "@/components/onboarding-screen";
 import { BottomNav } from "@/components/ui/bottom-nav";
 import { ToastNotification } from "@/components/ui/toast-notification";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { getSettings, saveSettings, type AppSettings } from "@/lib/storage";
+import {
+  getSettings,
+  saveSettings,
+  saveFrequentDiners,
+  type AppSettings,
+} from "@/lib/storage";
 
 export type Diner = {
   id: string;
@@ -165,6 +170,10 @@ export default function Home() {
   };
 
   const handleNewBill = (wasCompleted: boolean = false) => {
+    // Guardar nombres para autocompletado cuando se completa
+    if (wasCompleted && diners.length > 0) {
+      saveFrequentDiners(diners.map((d) => d.name).filter(Boolean));
+    }
     setDiners([]);
     setItems([]);
     setStep("setup");

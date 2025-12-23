@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Plus, Users, ArrowRight, UserPlus } from "lucide-react";
+import { Plus, Users, ArrowRight, UserPlus, Clock } from "lucide-react";
 import { SwipeableItem } from "@/components/ui/swipeable-item";
 import { ProgressSteps } from "@/components/ui/progress-steps";
 import { AvatarInitials } from "@/components/ui/avatar-initials";
+import { getSuggestions, getTopDiners } from "@/lib/storage";
+import { cn } from "@/lib/utils";
 import type { Diner } from "@/app/page";
 
 interface SetupScreenProps {
@@ -26,20 +28,83 @@ export function SetupScreen({
     initialDiners.length > 0 ? initialDiners : []
   );
   const [newName, setNewName] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Nombres ya usados (para excluir de sugerencias)
+  const usedNames = useMemo(
+    () => diners.map((d) => d.name.toLowerCase()),
+    [diners]
+  );
+
+  // Sugerencias basadas en lo que escribe
+  const suggestions = useMemo(
+    () =>
+      getSuggestions(
+        newName,
+        diners.map((d) => d.name)
+      ),
+    [newName, diners]
+  );
+
+  // Comensales frecuentes para chips rápidos
+  const [frequentDiners, setFrequentDiners] = useState<string[]>([]);
 
   useEffect(() => {
     inputRef.current?.focus();
+    // Cargar comensales frecuentes al montar
+    setFrequentDiners(
+      getTopDiners(
+        6,
+        diners.map((d) => d.name)
+      )
+    );
   }, []);
 
-  const addDiner = () => {
-    if (newName.trim()) {
+  // Actualizar chips cuando cambian los diners
+  useEffect(() => {
+    setFrequentDiners(
+      getTopDiners(
+        6,
+        diners.map((d) => d.name)
+      )
+    );
+  }, [diners]);
+
+  // Cerrar sugerencias al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const addDiner = (name?: string) => {
+    const nameToAdd = (name || newName).trim();
+    if (nameToAdd) {
+      // Verificar que no exista ya
+      if (
+        diners.some((d) => d.name.toLowerCase() === nameToAdd.toLowerCase())
+      ) {
+        showToast(`${nameToAdd} ya está en la mesa`, "error");
+        return;
+      }
       setDiners([
         ...diners,
-        { id: crypto.randomUUID(), name: newName.trim(), paid: false },
+        { id: crypto.randomUUID(), name: nameToAdd, paid: false },
       ]);
       setNewName("");
-      showToast(`${newName.trim()} agregado`);
+      setShowSuggestions(false);
+      showToast(`${nameToAdd} agregado`);
       // Mantener el foco
       setTimeout(() => inputRef.current?.focus(), 0);
     }
@@ -153,39 +218,111 @@ export function SetupScreen({
             )}
 
             {/* Agregar nuevo comensal */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <Label htmlFor="new-diner-input" className="sr-only">
-                  Agregar nuevo comensal
-                </Label>
-                <Input
-                  id="new-diner-input"
-                  ref={inputRef}
-                  placeholder={
-                    diners.length === 0
-                      ? "Nombre del primer comensal"
-                      : "Agregar otro comensal..."
-                  }
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addDiner()}
-                  className="flex-1 h-14 text-base rounded-xl focus-ring"
-                  aria-describedby="diner-hint"
-                />
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="new-diner-input" className="sr-only">
+                    Agregar nuevo comensal
+                  </Label>
+                  <Input
+                    id="new-diner-input"
+                    ref={inputRef}
+                    placeholder={
+                      diners.length === 0
+                        ? "Nombre del primer comensal"
+                        : "Agregar otro comensal..."
+                    }
+                    value={newName}
+                    onChange={(e) => {
+                      setNewName(e.target.value);
+                      setShowSuggestions(e.target.value.length > 0);
+                    }}
+                    onFocus={() => setShowSuggestions(newName.length > 0)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (suggestions.length > 0 && showSuggestions) {
+                          addDiner(suggestions[0]);
+                        } else {
+                          addDiner();
+                        }
+                      } else if (e.key === "Escape") {
+                        setShowSuggestions(false);
+                      }
+                    }}
+                    className="flex-1 h-14 text-base rounded-xl focus-ring"
+                    aria-describedby="diner-hint"
+                    autoComplete="off"
+                  />
+                </div>
+                <Button
+                  onClick={() => addDiner()}
+                  disabled={!newName.trim()}
+                  size="icon"
+                  className="shrink-0 h-14 w-14 rounded-xl touch-feedback focus-ring"
+                  aria-label="Agregar comensal"
+                >
+                  <Plus className="h-6 w-6" />
+                </Button>
               </div>
-              <Button
-                onClick={addDiner}
-                disabled={!newName.trim()}
-                size="icon"
-                className="shrink-0 h-14 w-14 rounded-xl touch-feedback focus-ring"
-                aria-label="Agregar comensal"
-              >
-                <Plus className="h-6 w-6" />
-              </Button>
+
+              {/* Dropdown de sugerencias */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute left-0 right-14 top-full mt-1 bg-card border rounded-xl shadow-lg z-20 overflow-hidden animate-fade-in"
+                >
+                  {suggestions.map((name, idx) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => addDiner(name)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/50 transition-colors touch-feedback",
+                        idx === 0 && "bg-secondary/30"
+                      )}
+                    >
+                      <AvatarInitials name={name} size="sm" />
+                      <span className="font-medium">{name}</span>
+                      {idx === 0 && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Enter ↵
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <p id="diner-hint" className="sr-only">
               Escribe el nombre y presiona Enter o el botón + para agregar
             </p>
+
+            {/* Chips de comensales frecuentes */}
+            {frequentDiners.length > 0 && diners.length < 8 && (
+              <div className="mt-4 animate-fade-in">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    Recientes
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {frequentDiners.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => addDiner(name)}
+                      className="flex items-center gap-2 px-3 py-2 bg-secondary/50 hover:bg-secondary rounded-full transition-colors touch-feedback text-sm"
+                    >
+                      <AvatarInitials name={name} size="sm" />
+                      <span>{name}</span>
+                      <Plus className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
