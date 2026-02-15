@@ -14,6 +14,7 @@ import {
   getSettings,
   saveSettings,
   saveFrequentDiners,
+  saveBill,
   type AppSettings,
 } from "@/lib/storage";
 
@@ -93,7 +94,7 @@ export default function Home() {
     setSettings(loadedSettings);
     document.documentElement.classList.toggle(
       "dark",
-      loadedSettings.theme === "dark"
+      loadedSettings.theme === "dark",
     );
 
     // Verificar si es la primera vez
@@ -130,7 +131,7 @@ export default function Home() {
     (message: string, type: "success" | "error" | "info" = "success") => {
       setToast({ message, type });
     },
-    []
+    [],
   );
 
   const handleSettingsUpdate = (newSettings: AppSettings) => {
@@ -170,16 +171,32 @@ export default function Home() {
   };
 
   const handleNewBill = (wasCompleted: boolean = false) => {
-    // Guardar nombres para autocompletado cuando se completa
-    if (wasCompleted && diners.length > 0) {
+    // Si la cuenta estaba completa o tiene datos válidos, guardarla en historial
+    if (diners.length > 0 && items.length > 0) {
+      // Calcular total para el historial
+      const total = items.reduce((sum, item) => sum + item.price, 0);
+
+      // Guardar en historial
+      saveBill({
+        id: crypto.randomUUID(),
+        date: new Date().toISOString(),
+        diners,
+        items,
+        servicePercent: settings.servicePercent,
+        currency: settings.currency,
+        total,
+      });
+
+      // Guardar comensales frecuentes
       saveFrequentDiners(diners.map((d) => d.name).filter(Boolean));
     }
+
     setDiners([]);
     setItems([]);
     setStep("setup");
     clearCurrentBill();
     if (wasCompleted) {
-      showToast("¡Cuenta cerrada! ✓", "success");
+      showToast("¡Cuenta guardada en historial! ✓", "success");
     } else {
       showToast("Nueva cuenta iniciada", "info");
     }

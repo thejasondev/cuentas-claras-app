@@ -584,7 +584,7 @@ export function ItemsScreen({
 
       {/* Footer unificado - estático en el flex column */}
       {!showForm && (
-        <div className="shrink-0 bg-background border-t">
+        <div className="shrink-0 bg-background border-t pb-[50px]">
           <div className="max-w-md mx-auto px-5 py-3">
             {items.length > 0 && (
               <div className="flex items-center justify-between mb-3">

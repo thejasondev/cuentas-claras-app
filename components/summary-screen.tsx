@@ -463,7 +463,7 @@ export function SummaryScreen({
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 bg-background border-t">
+      <div className="shrink-0 bg-background border-t pb-[50px]">
         <div className="max-w-md mx-auto px-5 py-3 space-y-3">
           <Button
             onClick={handleShare}

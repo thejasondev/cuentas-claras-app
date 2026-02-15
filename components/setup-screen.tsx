@@ -303,7 +303,7 @@ export function SetupScreen({
       </div>
 
       {/* Bottom CTA */}
-      <div className="shrink-0 bg-background border-t">
+      <div className="shrink-0 bg-background border-t pb-[100px]">
         <div className="max-w-md mx-auto px-5 py-3">
           <Button
             onClick={handleSubmit}
