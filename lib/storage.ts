@@ -7,6 +7,7 @@ export interface SavedBill {
     name: string;
     price: number;
     assignedTo: string[];
+    isShared?: boolean;
   }>;
   servicePercent: number;
   currency: string;
@@ -77,7 +78,7 @@ export function saveSettings(settings: AppSettings): void {
     // Apply theme immediately
     document.documentElement.classList.toggle(
       "dark",
-      settings.theme === "dark"
+      settings.theme === "dark",
     );
   } catch (error) {
     console.error("Error saving settings:", error);
@@ -117,7 +118,7 @@ export function saveFrequentDiners(names: string[]): void {
       if (!trimmedName) return;
 
       const existingIndex = existing.findIndex(
-        (d) => d.name.toLowerCase() === trimmedName.toLowerCase()
+        (d) => d.name.toLowerCase() === trimmedName.toLowerCase(),
       );
 
       if (existingIndex >= 0) {
@@ -163,7 +164,7 @@ export function getFrequentDiners(): FrequentDiner[] {
  */
 export function getSuggestions(
   query: string,
-  exclude: string[] = []
+  exclude: string[] = [],
 ): string[] {
   if (!query.trim()) return [];
 
@@ -175,7 +176,7 @@ export function getSuggestions(
     .filter(
       (d) =>
         d.name.toLowerCase().includes(lowerQuery) &&
-        !lowerExclude.includes(d.name.toLowerCase())
+        !lowerExclude.includes(d.name.toLowerCase()),
     )
     .slice(0, 5) // Máximo 5 sugerencias
     .map((d) => d.name);
@@ -186,7 +187,7 @@ export function getSuggestions(
  */
 export function getTopDiners(
   limit: number = 6,
-  exclude: string[] = []
+  exclude: string[] = [],
 ): string[] {
   const diners = getFrequentDiners();
   const lowerExclude = exclude.map((e) => e.toLowerCase());

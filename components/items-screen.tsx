@@ -92,12 +92,12 @@ export function ItemsScreen({
               ? {
                   ...item,
                   name: itemName.trim(),
-                  price: Number.parseFloat(itemPrice),
+                  price: safeParsePrice(itemPrice),
                   assignedTo: isAllSelected ? ["all"] : selectedDiners,
                   isShared: selectedDiners.length >= 2 ? isShared : true,
                 }
-              : item
-          )
+              : item,
+          ),
         );
         showToast("Plato actualizado");
         setEditingItemId(null);
@@ -105,7 +105,7 @@ export function ItemsScreen({
         const newItem: Item = {
           id: crypto.randomUUID(),
           name: itemName.trim(),
-          price: Number.parseFloat(itemPrice),
+          price: safeParsePrice(itemPrice),
           assignedTo: isAllSelected ? ["all"] : selectedDiners,
           isShared: selectedDiners.length >= 2 ? isShared : true,
         };
@@ -168,18 +168,31 @@ export function ItemsScreen({
       .join(", ");
   };
 
-  // Vista previa de división
-  const previewPricePerPerson =
-    itemPrice && selectedDiners.length > 0
-      ? Number.parseFloat(itemPrice) / selectedDiners.length
-      : 0;
+  // Parseo seguro del precio (evita NaN)
+  const safeParsePrice = (value: string): number => {
+    const parsed = Number.parseFloat(value);
+    return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
+  };
 
-  const total = items.reduce((sum, item) => sum + item.price, 0);
+  // Subtotal real de la mesa (respeta isShared)
+  const total = items.reduce((sum, item) => {
+    const itemIsShared = item.isShared ?? true;
+    if (itemIsShared) {
+      // Compartido: el precio ya es el total del plato
+      return sum + item.price;
+    } else {
+      // Cada uno: multiplicar por comensales asignados
+      const assignedCount = item.assignedTo.includes("all")
+        ? diners.length
+        : item.assignedTo.length;
+      return sum + item.price * assignedCount;
+    }
+  }, 0);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-dvh">
       {/* Header */}
-      <header className="header-gradient text-primary-foreground px-4 pt-6 pb-4 safe-top">
+      <header className="header-gradient text-primary-foreground px-4 pt-6 pb-4 safe-top shrink-0">
         <div className="max-w-md mx-auto flex items-center gap-3 pt-4">
           <Button
             variant="ghost"
@@ -199,7 +212,7 @@ export function ItemsScreen({
         </div>
       </header>
 
-      <div className="bg-card border-b card-shadow">
+      <div className="bg-card border-b card-shadow shrink-0">
         <div className="max-w-md mx-auto">
           <ProgressSteps
             currentStep={1}
@@ -209,7 +222,7 @@ export function ItemsScreen({
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-5 max-w-md mx-auto w-full overflow-y-auto scroll-smooth-touch scrollbar-hide pb-36">
+      <div className="flex-1 overflow-y-auto px-4 py-5 max-w-md mx-auto w-full scroll-smooth-touch scrollbar-hide">
         {showForm && (
           <Card className="mb-5 card-shadow animate-slide-up" ref={formRef}>
             <CardContent className="p-5">
@@ -267,7 +280,7 @@ export function ItemsScreen({
                     onChange={(e) => setItemPrice(e.target.value)}
                     className={cn(
                       "h-14 text-base rounded-xl focus-ring text-right font-bold pr-4",
-                      currency === "CUP" ? "pl-14" : "pl-10"
+                      currency === "CUP" ? "pl-14" : "pl-10",
                     )}
                     min="0"
                     step="0.01"
@@ -288,7 +301,7 @@ export function ItemsScreen({
                       "w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all touch-feedback",
                       isAllSelected
                         ? "bg-primary/10 border-primary shadow-md"
-                        : "border-border hover:border-primary/50"
+                        : "border-border hover:border-primary/50",
                     )}
                   >
                     <div
@@ -296,7 +309,7 @@ export function ItemsScreen({
                         "flex items-center justify-center h-10 w-10 rounded-full transition-colors",
                         isAllSelected
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
+                          : "bg-muted",
                       )}
                     >
                       <Users className="h-5 w-5" />
@@ -304,10 +317,10 @@ export function ItemsScreen({
                     <span
                       className={cn(
                         "text-base font-medium flex-1 text-left",
-                        isAllSelected && "text-primary"
+                        isAllSelected && "text-primary",
                       )}
                     >
-                      Todos (compartido)
+                      Todos
                     </span>
                     <Checkbox
                       checked={isAllSelected}
@@ -330,7 +343,7 @@ export function ItemsScreen({
                             "flex items-center gap-2 px-3 py-2 rounded-full border-2 transition-all touch-feedback",
                             isSelected
                               ? "bg-primary/10 border-primary shadow-sm scale-105"
-                              : "border-border hover:border-primary/50"
+                              : "border-border hover:border-primary/50",
                           )}
                           data-pressed={isSelected ? "true" : "false"}
                         >
@@ -338,7 +351,7 @@ export function ItemsScreen({
                           <span
                             className={cn(
                               "text-sm font-medium",
-                              isSelected && "text-primary"
+                              isSelected && "text-primary",
                             )}
                           >
                             {diner.name}
@@ -363,7 +376,7 @@ export function ItemsScreen({
                           "flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl border-2 transition-all touch-feedback text-sm",
                           isShared
                             ? "bg-primary/10 border-primary text-primary font-semibold"
-                            : "border-border text-muted-foreground hover:border-primary/50"
+                            : "border-border text-muted-foreground hover:border-primary/50",
                         )}
                       >
                         <span className="text-base">🔀</span>
@@ -376,7 +389,7 @@ export function ItemsScreen({
                           "flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl border-2 transition-all touch-feedback text-sm",
                           !isShared
                             ? "bg-primary/10 border-primary text-primary font-semibold"
-                            : "border-border text-muted-foreground hover:border-primary/50"
+                            : "border-border text-muted-foreground hover:border-primary/50",
                         )}
                       >
                         <span className="text-base">🍽️</span>
@@ -399,14 +412,14 @@ export function ItemsScreen({
                           <span className="text-sm text-muted-foreground">
                             {selectedDiners.length} personas ×{" "}
                             {formatCurrency(
-                              Number.parseFloat(itemPrice),
-                              currency
+                              safeParsePrice(itemPrice),
+                              currency,
                             )}
                           </span>
                           <span className="font-bold text-lg text-primary">
                             {formatCurrency(
-                              Number.parseFloat(itemPrice),
-                              currency
+                              safeParsePrice(itemPrice),
+                              currency,
                             )}{" "}
                             c/u
                           </span>
@@ -414,9 +427,8 @@ export function ItemsScreen({
                         <p className="text-xs text-muted-foreground">
                           Total:{" "}
                           {formatCurrency(
-                            Number.parseFloat(itemPrice) *
-                              selectedDiners.length,
-                            currency
+                            safeParsePrice(itemPrice) * selectedDiners.length,
+                            currency,
                           )}
                         </p>
                       </div>
@@ -430,9 +442,8 @@ export function ItemsScreen({
                         </span>
                         <span className="font-bold text-lg text-primary">
                           {formatCurrency(
-                            Number.parseFloat(itemPrice) /
-                              selectedDiners.length,
-                            currency
+                            safeParsePrice(itemPrice) / selectedDiners.length,
+                            currency,
                           )}{" "}
                           c/u
                         </span>
@@ -495,7 +506,7 @@ export function ItemsScreen({
                 <Card
                   className={cn(
                     "card-shadow animate-fade-in",
-                    editingItemId === item.id && "ring-2 ring-primary"
+                    editingItemId === item.id && "ring-2 ring-primary",
                   )}
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
@@ -547,15 +558,6 @@ export function ItemsScreen({
                 </Card>
               </SwipeableItem>
             ))}
-
-            <div className="flex justify-between items-center pt-4 px-1 border-t mt-4 pr-28">
-              <span className="text-muted-foreground font-medium">
-                Subtotal
-              </span>
-              <span className="font-bold text-xl">
-                {formatCurrency(total, currency)}
-              </span>
-            </div>
           </div>
         )}
 
@@ -580,29 +582,40 @@ export function ItemsScreen({
         )}
       </div>
 
-      {!showForm && items.length > 0 && (
-        <button
-          onClick={() => setShowForm(true)}
-          className="fixed right-4 bottom-24 z-30 flex items-center justify-center h-14 min-w-14 px-5 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 touch-feedback no-select transition-all duration-200 hover:shadow-2xl hover:scale-105 focus-ring mb-2"
-          aria-label="Agregar plato"
-        >
-          <Plus className="h-5 w-5" strokeWidth={2.5} />
-        </button>
-      )}
-
-      {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t px-4 py-6 safe-bottom">
-        <div className="max-w-md mx-auto pb-4">
-          <Button
-            onClick={onComplete}
-            disabled={items.length === 0}
-            className="w-full h-14 text-base font-semibold rounded-xl touch-feedback shadow-lg shadow-primary/20 focus-ring"
-          >
-            Ver Resumen
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+      {/* Footer unificado - estático en el flex column */}
+      {!showForm && (
+        <div className="shrink-0 bg-background border-t">
+          <div className="max-w-md mx-auto px-5 py-3">
+            {items.length > 0 && (
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <span className="text-xs text-muted-foreground">
+                    Subtotal
+                  </span>
+                  <p className="text-lg font-bold">
+                    {formatCurrency(total, currency)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center gap-1.5 px-4 h-10 rounded-full bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors touch-feedback"
+                >
+                  <Plus className="h-4 w-4" />
+                  Agregar
+                </button>
+              </div>
+            )}
+            <Button
+              onClick={onComplete}
+              disabled={items.length === 0}
+              className="w-full h-12 text-base font-semibold rounded-2xl touch-feedback shadow-lg shadow-primary/25 focus-ring"
+            >
+              Ver Resumen
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -63,23 +63,45 @@ export function SummaryScreen({
 }: SummaryScreenProps) {
   const [divisionMode, setDivisionMode] = useState<DivisionMode>("consumption");
   const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false);
+  const [isSavedToHistory, setIsSavedToHistory] = useState(false);
 
   const summaries = useMemo(() => {
+    // Calcular el total real de la mesa (respetando isShared)
+    const getRealTotal = () => {
+      return items.reduce((sum, item) => {
+        const itemIsShared = item.isShared ?? true;
+        if (itemIsShared) {
+          // Compartido: el precio es el total del plato
+          return sum + item.price;
+        } else {
+          // Cada uno: el precio se multiplica por la cantidad de comensales asignados
+          const assignedCount = item.assignedTo.includes("all")
+            ? diners.length
+            : item.assignedTo.length;
+          return sum + item.price * assignedCount;
+        }
+      }, 0);
+    };
+
     return diners.map((diner) => {
       let subtotal = 0;
 
       if (divisionMode === "equal") {
-        // División igualitaria
-        const totalItems = items.reduce((sum, item) => sum + item.price, 0);
-        subtotal = totalItems / diners.length;
+        // División igualitaria: total real de la mesa / cantidad de comensales
+        subtotal = getRealTotal() / diners.length;
       } else {
         // División por consumo
         items.forEach((item) => {
-          const itemIsShared = item.isShared ?? true; // Default a compartido para items antiguos
+          const itemIsShared = item.isShared ?? true;
 
           if (item.assignedTo.includes("all")) {
-            // Todos comparten - siempre dividir
-            subtotal += item.price / diners.length;
+            if (itemIsShared) {
+              // Todos comparten - dividir entre todos
+              subtotal += item.price / diners.length;
+            } else {
+              // Cada uno paga el total
+              subtotal += item.price;
+            }
           } else if (item.assignedTo.includes(diner.id)) {
             if (itemIsShared) {
               // Compartido - dividir entre los asignados
@@ -159,7 +181,7 @@ export function SummaryScreen({
     const diner = diners.find((d) => d.id === dinerId);
     const newPaidStatus = !diner?.paid;
     setDiners(
-      diners.map((d) => (d.id === dinerId ? { ...d, paid: newPaidStatus } : d))
+      diners.map((d) => (d.id === dinerId ? { ...d, paid: newPaidStatus } : d)),
     );
 
     triggerHaptic(newPaidStatus ? "medium" : "light");
@@ -167,7 +189,7 @@ export function SummaryScreen({
     if (diner) {
       showToast(
         newPaidStatus ? `${diner.name} ha pagado` : `${diner.name} pendiente`,
-        newPaidStatus ? "success" : "info"
+        newPaidStatus ? "success" : "info",
       );
     }
   };
@@ -181,7 +203,7 @@ export function SummaryScreen({
       const status = s.diner.paid ? "✅" : "⏳";
       text += `${status} ${s.diner.name}: ${formatCurrency(
         s.total,
-        currency
+        currency,
       )}\n`;
     });
 
@@ -196,6 +218,7 @@ export function SummaryScreen({
   };
 
   const saveBillToHistory = () => {
+    if (isSavedToHistory) return; // Evitar duplicados
     const bill: SavedBill = {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
@@ -206,6 +229,7 @@ export function SummaryScreen({
       total: grandTotal,
     };
     saveBill(bill);
+    setIsSavedToHistory(true);
   };
 
   const handleShare = async () => {
@@ -237,9 +261,9 @@ export function SummaryScreen({
   const allPaid = paidCount === diners.length && diners.length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-dvh">
       {/* Header */}
-      <header className="header-gradient text-primary-foreground px-4 pt-4 pb-4 safe-top">
+      <header className="header-gradient text-primary-foreground px-4 pt-4 pb-4 safe-top shrink-0">
         <div className="max-w-md mx-auto flex items-center gap-3 mt-4">
           <Button
             variant="ghost"
@@ -265,7 +289,7 @@ export function SummaryScreen({
         </div>
       </header>
 
-      <div className="bg-card border-b card-shadow">
+      <div className="bg-card border-b card-shadow shrink-0">
         <div className="max-w-md mx-auto">
           <ProgressSteps
             currentStep={2}
@@ -275,7 +299,7 @@ export function SummaryScreen({
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-5 max-w-md mx-auto w-full overflow-y-auto scroll-smooth-touch scrollbar-hide pb-52">
+      <div className="flex-1 overflow-y-auto px-4 py-5 max-w-md mx-auto w-full scroll-smooth-touch scrollbar-hide">
         {/* Barra de progreso de pagos */}
         <div className="mb-5 animate-fade-in">
           <div className="flex items-center justify-between mb-2">
@@ -309,7 +333,7 @@ export function SummaryScreen({
                 "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 transition-all touch-feedback",
                 divisionMode === "consumption"
                   ? "bg-primary/10 border-primary text-primary font-semibold"
-                  : "border-border text-muted-foreground"
+                  : "border-border text-muted-foreground",
               )}
             >
               <Calculator className="h-4 w-4" />
@@ -321,7 +345,7 @@ export function SummaryScreen({
                 "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 transition-all touch-feedback",
                 divisionMode === "equal"
                   ? "bg-primary/10 border-primary text-primary font-semibold"
-                  : "border-border text-muted-foreground"
+                  : "border-border text-muted-foreground",
               )}
             >
               <Users className="h-4 w-4" />
@@ -343,7 +367,7 @@ export function SummaryScreen({
                 index === 2 && "delay-200",
                 index === 3 && "delay-250",
                 index === 4 && "delay-300",
-                index >= 5 && "delay-350"
+                index >= 5 && "delay-350",
               )}
             >
               <CardContent className="py-4 px-4">
@@ -368,7 +392,7 @@ export function SummaryScreen({
                     <span
                       className={cn(
                         "font-semibold text-lg transition-colors",
-                        summary.diner.paid && "text-primary"
+                        summary.diner.paid && "text-primary",
                       )}
                     >
                       {summary.diner.name}
@@ -417,7 +441,7 @@ export function SummaryScreen({
         <Card
           className={cn(
             "bg-primary text-primary-foreground shadow-lg transition-all",
-            allPaid && "animate-bounce-in"
+            allPaid && "animate-bounce-in",
           )}
         >
           <CardContent className="py-5 px-5">
@@ -439,20 +463,20 @@ export function SummaryScreen({
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t px-4 py-4 safe-bottom">
-        <div className="max-w-md mx-auto space-y-3 mt-2">
+      <div className="shrink-0 bg-background border-t">
+        <div className="max-w-md mx-auto px-5 py-3 space-y-3">
           <Button
             onClick={handleShare}
-            className="w-full h-14 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl touch-feedback shadow-lg shadow-primary/20 focus-ring"
+            className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl touch-feedback shadow-lg shadow-primary/25 focus-ring"
           >
             <Share2 className="mr-2 h-5 w-5" />
             Enviar Cuenta
           </Button>
-          <div className="flex gap-3 mb-2">
+          <div className="flex gap-3">
             <Button
               variant="outline"
               onClick={() => copyToClipboard(generateShareText())}
-              className="flex-1 h-12 rounded-xl touch-feedback bg-transparent focus-ring"
+              className="flex-1 h-10 rounded-xl touch-feedback bg-transparent focus-ring"
             >
               <Copy className="mr-2 h-4 w-4" />
               Copiar
@@ -460,7 +484,7 @@ export function SummaryScreen({
             <Button
               variant="outline"
               onClick={onNewBill}
-              className="flex-1 h-12 rounded-xl bg-transparent touch-feedback focus-ring"
+              className="flex-1 h-10 rounded-xl bg-transparent touch-feedback focus-ring"
             >
               <RotateCcw className="mr-2 h-4 w-4" />
               Nueva Cuenta
